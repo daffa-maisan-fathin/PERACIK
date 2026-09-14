@@ -1,0 +1,261 @@
+:root {
+  --kertas: #f3eedf;
+  --kertas-gelap: #ece4cf;
+  --tinta: #2a2118;
+  --kopi: #5b3a29;
+  --sachet: #dd6b20;
+  --hijau: #4c6b3f;
+  --garis: #c9bfa6;
+  --merah-error: #b3401f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--kertas-gelap);
+  color: var(--tinta);
+  font-family: "JetBrains Mono", monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px 80px;
+  background-image:
+    radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.meja {
+  width: 100%;
+  max-width: 440px;
+  background: var(--kertas);
+  padding: 28px 24px 20px;
+  box-shadow: 0 18px 40px rgba(42, 33, 24, 0.18);
+  position: relative;
+}
+
+/* efek pinggiran nota bergerigi, atas & bawah */
+.meja::before,
+.meja::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background:
+    linear-gradient(135deg, var(--kertas-gelap) 25%, transparent 25%) -6px 0,
+    linear-gradient(225deg, var(--kertas-gelap) 25%, transparent 25%) -6px 0;
+  background-size: 12px 12px;
+}
+.meja::before { top: -1px; }
+.meja::after { bottom: -1px; transform: scaleY(-1); }
+
+.garis-putus {
+  border-top: 2px dashed var(--garis);
+  margin: 18px 0;
+}
+
+/* ---------- Kop nota ---------- */
+.kop-nota {
+  text-align: center;
+}
+
+.nama-warung {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--kopi);
+  margin: 0 0 6px;
+}
+
+.kop-nota h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 30px;
+  line-height: 1.05;
+  margin: 0;
+  color: var(--tinta);
+}
+
+.kop-nota .tagline {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--kopi);
+}
+
+/* ---------- Form racik ---------- */
+.form-racik label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--kopi);
+}
+
+.form-racik textarea {
+  width: 100%;
+  resize: vertical;
+  border: 2px solid var(--tinta);
+  background: #fffdf7;
+  padding: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  color: var(--tinta);
+}
+
+.form-racik textarea:focus {
+  outline: 3px solid var(--sachet);
+  outline-offset: 1px;
+}
+
+#btn-racik {
+  margin-top: 14px;
+  width: 100%;
+  padding: 14px;
+  background: var(--sachet);
+  color: #fffdf7;
+  border: none;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+
+#btn-racik:hover { background: #c65a15; }
+#btn-racik:active { transform: scale(0.98); }
+#btn-racik:disabled {
+  background: #b8a98f;
+  cursor: wait;
+}
+
+.pesan-error {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--merah-error);
+}
+
+/* ---------- Hasil resep ---------- */
+.label-kecil {
+  font-size: 11px;
+  color: var(--kopi);
+  margin: 0 0 8px;
+}
+
+.hasil-resep h2 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: var(--tinta);
+}
+
+.deskripsi {
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.daftar-bahan, .daftar-langkah {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.daftar-bahan li::marker { color: var(--sachet); }
+.daftar-langkah li::marker { color: var(--hijau); font-weight: 700; }
+
+.tips-box {
+  border-left: 3px solid var(--hijau);
+  padding: 10px 12px;
+  background: rgba(76, 107, 63, 0.08);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.footer-nota {
+  text-align: center;
+  font-size: 12px;
+  color: var(--kopi);
+  margin: 0;
+}
+
+/* ---------- Riwayat ---------- */
+.riwayat-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.riwayat-kop h3 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 17px;
+  margin: 0 0 10px;
+}
+
+#btn-refresh {
+  background: none;
+  border: 2px solid var(--tinta);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--tinta);
+}
+
+.riwayat-kosong {
+  font-size: 13px;
+  color: var(--kopi);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.riwayat-item {
+  border: 2px dashed var(--garis);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: #fffdf7;
+}
+
+.riwayat-item:hover { border-color: var(--sachet); }
+
+.riwayat-item .riwayat-nama {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.riwayat-item .riwayat-meta {
+  font-size: 11.5px;
+  color: var(--kopi);
+  margin: 0;
+}
+
+.kaki-nota {
+  text-align: center;
+}
+.kaki-nota p {
+  font-size: 12px;
+  color: var(--kopi);
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+.logo-peracik {
+    position: absolute; 
+    top: 0px;           
+    right: -60px;       
+    width: 200px;       /* <--- UBAH ANGKA INI UNTUK MEMBESARKAN LOGO */
+    height: auto;
+    mix-blend-mode: multiply; 
+}
