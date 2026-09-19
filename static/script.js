@@ -58,6 +58,15 @@ function renderResep(resep) {
     tipsWrap.hidden = true;
   }
 
+  const referensiWrap = el("hasil-referensi-wrap");
+  if (resep.referensi_dataset) {
+    el("hasil-referensi").textContent =
+      `Racikan ini terinspirasi dari pola resep: ${resep.referensi_dataset} (dataset Coffee Shop Chain Recipes, Kaggle).`;
+    referensiWrap.hidden = false;
+  } else {
+    referensiWrap.hidden = true;
+  }
+
   hasilResep.hidden = false;
   hasilResep.scrollIntoView({ behavior: "smooth", block: "start" });
 }

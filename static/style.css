@@ -1,3 +1,18 @@
+/* ------------------------------------------------------------------
+   Token desain — "AI Barista Anak Kos"
+   Konsep: nota / struk kasir minimarket, bukan kartu SaaS generik.
+   Warna:
+     --kertas   : #F3EEDF  (kertas struk/kraft)
+     --tinta    : #2A2118  (tinta hitam kecoklatan)
+     --kopi     : #5B3A29  (coklat kopi tua)
+     --sachet   : #DD6B20  (oranye kemasan sachet kopi/susu)
+     --hijau    : #4C6B3F  (hijau warung, aksen "hemat")
+     --garis    : #C9BFA6  (garis putus2 nota)
+   Font:
+     Display / heading -> "Space Grotesk" (tegas, agak playful, bukan default)
+     Body / label      -> "JetBrains Mono" (nuansa struk kasir dot-matrix)
+------------------------------------------------------------------- */
+
 :root {
   --kertas: #f3eedf;
   --kertas-gelap: #ece4cf;
@@ -63,6 +78,13 @@ body {
 /* ---------- Kop nota ---------- */
 .kop-nota {
   text-align: center;
+}
+
+.kop-nota .logo {
+  width: 84px;
+  height: auto;
+  margin: 0 auto 10px;
+  display: block;
 }
 
 .nama-warung {
@@ -176,6 +198,15 @@ body {
   margin-bottom: 6px;
 }
 
+.referensi-box {
+  border-left: 3px solid var(--sachet);
+  padding: 10px 12px;
+  background: rgba(221, 107, 32, 0.08);
+  font-size: 12.5px;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
 .footer-nota {
   text-align: center;
   font-size: 12px;
@@ -249,13 +280,4 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
-}
-
-.logo-peracik {
-    position: absolute; 
-    top: 0px;           
-    right: -60px;       
-    width: 200px;       /* <--- UBAH ANGKA INI UNTUK MEMBESARKAN LOGO */
-    height: auto;
-    mix-blend-mode: multiply; 
 }

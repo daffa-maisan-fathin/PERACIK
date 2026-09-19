@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 import database
+import dataset
 
 # ----------------------------------------------------------------------------
 # Setup awal
@@ -44,12 +45,18 @@ database.init_db()
 # ----------------------------------------------------------------------------
 # Prompt Engineering: persona "Barista Kreatif Anak Kos"
 # ----------------------------------------------------------------------------
-def buat_prompt(bahan_input: str) -> str:
+def buat_prompt(bahan_input: str, referensi_text: str = "") -> str:
     """
     Merancang prompt supaya Gemini berperan sebagai barista kreatif
     yang paham banget isi minimarket/warung Indonesia, dan SELALU
     membalas dalam format JSON murni (tanpa markdown/basa-basi)
     supaya bisa langsung di-parse oleh backend.
+
+    `referensi_text` (opsional) berisi contoh resep dari DATASET ASLI
+    (lihat dataset.py) yang mirip kategorinya dengan bahan user -- ini
+    yang membuat pendekatan ini disebut RAG (Retrieval-Augmented
+    Generation) sederhana: AI tidak mengarang proporsi dari nol, tapi
+    diberi contoh nyata dulu sebagai referensi pola takaran.
     """
     return f"""
 Kamu adalah "Kang/Mbak Barista", seorang barista jenius yang biasa meracik
@@ -68,12 +75,28 @@ Tugasmu sekarang:
 Bahan-bahan yang tersedia (ditulis bebas oleh user, boleh typo/singkatan): 
 "{bahan_input}"
 
-Buatkan SATU resep minuman kreatif dari bahan-bahan tersebut (boleh menambahkan
-bahan dasar yang hampir pasti ada di kos seperti air, es batu, gula, air panas —
-tapi JANGAN menambahkan bahan yang tidak umum/mahal).
+ATURAN VALIDASI (WAJIB dicek dulu, sebelum bikin resep apapun):
+Periksa apakah SEMUA bahan yang disebutkan adalah bahan makanan/minuman yang
+LAYAK DIKONSUMSI MANUSIA. Jika ada SATU SAJA bahan yang termasuk kategori berikut,
+JANGAN membuat resep apapun (termasuk resep "buat konten/pajangan/foto"):
+- Produk pembersih/kimia rumah tangga (sabun, sunlight, deterjen, pemutih, karbol, dll)
+- Bahan non-pangan lainnya (obat, kosmetik, bahan bangunan, bahan berbahaya, dll)
+- Input yang tidak jelas/tidak bisa dikenali sebagai bahan apapun
 
-WAJIB balas HANYA dalam format JSON valid seperti contoh di bawah ini,
-TANPA markdown code fence, TANPA penjelasan tambahan di luar JSON:
+Jika validasi GAGAL, balas HANYA JSON berikut ini (jangan tambah field lain):
+{{
+  "error": "Penjelasan singkat & ramah kenapa bahan ini tidak bisa diracik jadi minuman, lalu ajak user memasukkan bahan makanan/minuman yang sebenarnya."
+}}
+
+Jika validasi LOLOS (semua bahan aman dikonsumsi), lanjutkan membuat SATU resep
+minuman kreatif dari bahan-bahan tersebut (boleh menambahkan bahan dasar yang
+hampir pasti ada di kos seperti air, es batu, gula, air panas — tapi JANGAN
+menambahkan bahan yang tidak umum/mahal).
+{referensi_text}
+
+Setelah itu, WAJIB balas HANYA dalam format
+JSON valid seperti contoh di bawah ini, TANPA markdown code fence, TANPA
+penjelasan tambahan di luar JSON:
 
 {{
   "nama_menu": "Nama menu kreatif & estetik",
@@ -132,7 +155,12 @@ def racik():
             "error": "GEMINI_API_KEY belum di-set di server. Cek file .env sesuai README."
         }), 500
 
-    prompt = buat_prompt(bahan_input)
+    # RAG sederhana: cari resep referensi dari dataset Kaggle yang mirip
+    # kategorinya dengan bahan user, lalu sisipkan sebagai contoh ke prompt.
+    referensi = dataset.cari_referensi(bahan_input, n=2)
+    referensi_text = dataset.format_referensi_untuk_prompt(referensi)
+
+    prompt = buat_prompt(bahan_input, referensi_text)
 
     try:
         response = model.generate_content(prompt)
@@ -145,9 +173,15 @@ def racik():
     except Exception as e:
         return jsonify({"error": f"Gagal menghubungi AI Engine: {str(e)}"}), 502
 
-    # Simpan ke database
-    new_id = database.simpan_resep(bahan_input, resep)
+    # Kalau AI menolak karena bahan tidak layak konsumsi (lihat aturan validasi
+    # di buat_prompt), jangan simpan ke database, langsung balas errornya.
+    if "error" in resep:
+        return jsonify({"error": resep["error"]}), 422
+
+    # Simpan ke database, termasuk nama referensi dataset yang dipakai
+    new_id = database.simpan_resep(bahan_input, resep, dataset.nama_referensi_saja(referensi))
     resep["id"] = new_id
+    resep["referensi_dataset"] = dataset.nama_referensi_saja(referensi)
 
     return jsonify(resep), 200
 

@@ -49,22 +49,30 @@ def init_db():
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS resep (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            bahan_input   TEXT NOT NULL,
-            nama_menu     TEXT NOT NULL,
-            deskripsi     TEXT,
-            bahan_json    TEXT NOT NULL,
-            langkah_json  TEXT NOT NULL,
-            tips          TEXT,
-            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            bahan_input       TEXT NOT NULL,
+            nama_menu         TEXT NOT NULL,
+            deskripsi         TEXT,
+            bahan_json        TEXT NOT NULL,
+            langkah_json      TEXT NOT NULL,
+            tips              TEXT,
+            referensi_dataset TEXT,
+            created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
     conn.commit()
+
+    # Migrasi ringan: kalau tabel dibuat sebelum kolom ini ada, tambahkan.
+    try:
+        cur.execute("ALTER TABLE resep ADD COLUMN referensi_dataset TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # kolom sudah ada, aman diabaikan
     conn.close()
 
 
-def simpan_resep(bahan_input: str, resep: dict) -> int:
+def simpan_resep(bahan_input: str, resep: dict, referensi_dataset: str = "") -> int:
     """
     Simpan satu hasil racikan AI ke database.
     `resep` adalah dict hasil parsing JSON dari Gemini, contoh:
@@ -75,14 +83,16 @@ def simpan_resep(bahan_input: str, resep: dict) -> int:
         "langkah": ["...", "..."],
         "tips": "..."
     }
+    `referensi_dataset` adalah nama-nama resep dari dataset Kaggle yang
+    dipakai sebagai referensi (RAG) saat prompt disusun, dipisah koma.
     Mengembalikan id baris yang baru disimpan.
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO resep (bahan_input, nama_menu, deskripsi, bahan_json, langkah_json, tips)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO resep (bahan_input, nama_menu, deskripsi, bahan_json, langkah_json, tips, referensi_dataset)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             bahan_input,
@@ -91,6 +101,7 @@ def simpan_resep(bahan_input: str, resep: dict) -> int:
             json.dumps(resep.get("bahan", []), ensure_ascii=False),
             json.dumps(resep.get("langkah", []), ensure_ascii=False),
             resep.get("tips", ""),
+            referensi_dataset,
         ),
     )
     conn.commit()
@@ -109,7 +120,7 @@ def ambil_riwayat(limit: int = 50):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT id, bahan_input, nama_menu, deskripsi, bahan_json, langkah_json, tips, created_at
+        SELECT id, bahan_input, nama_menu, deskripsi, bahan_json, langkah_json, tips, referensi_dataset, created_at
         FROM resep
         ORDER BY created_at DESC
         LIMIT ?
@@ -130,6 +141,7 @@ def ambil_riwayat(limit: int = 50):
                 "bahan": json.loads(row["bahan_json"]),
                 "langkah": json.loads(row["langkah_json"]),
                 "tips": row["tips"],
+                "referensi_dataset": row["referensi_dataset"],
                 "created_at": row["created_at"],
             }
         )

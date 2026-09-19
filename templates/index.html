@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PERACIK</title>
+<title>AI Barista Anak Kos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -13,16 +13,16 @@
   <div class="meja">
 
     <header class="kop-nota">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo AI Barista Anak Kos" class="logo" />
       <p class="nama-warung">WARUNG DIGITAL</p>
-      <img src="{{ url_for('static', filename='peracik.jpg') }}" alt="Logo Peracik" class="logo-peracik">
-      <h1>PERACIK</h1>  
-      <p class="tagline">Program Eksperimen Resep AI Cerdas Instan & Kekinian</p>
+      <h1>AI BARISTA<br>ANAK KOS</h1>
+      <p class="tagline">racik kopi kafe pake modal minimarket</p>
       <div class="garis-putus"></div>
     </header>
 
     <section class="form-racik">
-      <label for="bahan-input">Bahan apa aja yang ada di kamar kos?</label>
-      <textarea id="bahan-input" rows="3" placeholder="contoh : Nescafe Ice Roast sachet + Milku cokelat + es batu"></textarea>
+      <label for="bahan-input">bahan apa aja yang ada di kamar kos?</label>
+      <textarea id="bahan-input" rows="3" placeholder="contoh: Nescafe Ice Roast sachet + Milku cokelat + es batu"></textarea>
       <button id="btn-racik" type="button">
         <span id="btn-text">Racik Menu!</span>
       </button>
@@ -44,6 +44,11 @@
       <div id="hasil-tips-wrap" class="tips-box" hidden>
         <p class="label-kecil">tips barista</p>
         <p id="hasil-tips"></p>
+      </div>
+
+      <div id="hasil-referensi-wrap" class="referensi-box" hidden>
+        <p class="label-kecil">📊 referensi dataset (RAG)</p>
+        <p id="hasil-referensi"></p>
       </div>
 
       <div class="garis-putus"></div>
