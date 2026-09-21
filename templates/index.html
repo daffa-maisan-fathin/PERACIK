@@ -10,68 +10,92 @@
 </head>
 <body>
 
-  <div class="meja">
+  <div class="main-container">
+    
+    <div class="left-panel">
+      <header class="header">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo" onerror="this.style.display='none'">
+        <h1>PERACIK<br><span>AI BARISTA ANAK KOS</span></h1>
+        <p class="tagline">Program Eksperimen Resep AI Cerdas Instan & Kekinian</p>
+      </header>
 
-    <header class="kop-nota">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo AI Barista Anak Kos" class="logo" />
-      <p class="nama-warung">WARUNG DIGITAL</p>
-      <h1>AI BARISTA<br>ANAK KOS</h1>
-      <p class="tagline">racik kopi kafe pake modal minimarket</p>
-      <div class="garis-putus"></div>
-    </header>
+      <section class="form-racik">
+        <label for="bahan-input">Bahan di kamar kos?</label>
+        <textarea id="bahan-input" rows="4" placeholder="Ketik bahan-bahan yang ada, contoh: Nescafe sachet, susu kental manis, es batu..."></textarea>
+        
+        <!-- TAMBAHAN: Kolom Preferensi Rasa -->
+        <div style="margin-top: 15px; margin-bottom: 15px;">
+            <label for="preferensi-input" style="display: block; margin-bottom: 5px; font-weight: 500;">Preferensi Rasa (Opsional)</label>
+            <input type="text" id="preferensi-input" class="form-control" placeholder="Contoh: Manis, creamy, sedikit pahit..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff;">
+        </div>
 
-    <section class="form-racik">
-      <label for="bahan-input">bahan apa aja yang ada di kamar kos?</label>
-      <textarea id="bahan-input" rows="3" placeholder="contoh: Nescafe Ice Roast sachet + Milku cokelat + es batu"></textarea>
-      <button id="btn-racik" type="button">
-        <span id="btn-text">Racik Menu!</span>
-      </button>
-      <p id="pesan-error" class="pesan-error" hidden></p>
-    </section>
+        <button id="btn-racik" type="button">
+          <span id="btn-text">Racik Menu!</span>
+        </button>
+        <p id="pesan-error" class="pesan-error" hidden></p>
+      </section>
+    </div>
 
-    <section id="hasil-resep" class="hasil-resep" hidden>
-      <div class="garis-putus"></div>
-      <p class="label-kecil">— hasil racikan —</p>
-      <h2 id="hasil-nama"></h2>
-      <p id="hasil-deskripsi" class="deskripsi"></p>
-
-      <p class="label-kecil">bahan</p>
-      <ul id="hasil-bahan" class="daftar-bahan"></ul>
-
-      <p class="label-kecil">langkah</p>
-      <ol id="hasil-langkah" class="daftar-langkah"></ol>
-
-      <div id="hasil-tips-wrap" class="tips-box" hidden>
-        <p class="label-kecil">tips barista</p>
-        <p id="hasil-tips"></p>
+    <!-- KOLOM KANAN: Hasil AI -->
+    <div class="right-panel">
+      <!-- State Awal Sebelum Meracik -->
+      <div id="welcome-state" class="welcome-state">
+        <p>☕ Beri tahu Kang Barista bahan apa yang kamu punya di kolom kiri, lalu klik <b>Racik Menu</b>.</p>
       </div>
 
-      <div id="hasil-referensi-wrap" class="referensi-box" hidden>
-        <p class="label-kecil">📊 referensi dataset (RAG)</p>
-        <p id="hasil-referensi"></p>
-      </div>
+      <!-- Kotak Hasil (Disembunyikan via JS pakai atribut hidden) -->
+      <section id="hasil-resep" class="hasil-resep" hidden>
+        
+        <!-- Badge Kategori ANN (Bisa kamu update via JS nanti) -->
+        <div class="ann-badge">
+          <span class="label">PREDIKSI ANN</span>
+          <span id="hasil-kategori" class="value">Menunggu hasil...</span>
+        </div>
 
-      <div class="garis-putus"></div>
-      <p class="footer-nota">tersimpan otomatis ke riwayat eksperimenmu ☕</p>
-    </section>
+        <div class="recipe-card">
+          <p class="label-kecil">RACIKAN MENUNMU:</p>
+          <h2 id="hasil-nama"></h2>
+          <p id="hasil-deskripsi" class="deskripsi"></p>
 
-    <section class="riwayat">
-      <div class="garis-putus"></div>
-      <div class="riwayat-kop">
-        <h3>Riwayat Eksperimen</h3>
-        <button id="btn-refresh" type="button" title="muat ulang riwayat">↻</button>
-      </div>
-      <div id="riwayat-list" class="riwayat-list">
-        <p class="riwayat-kosong">belum ada eksperimen. racik menu pertamamu di atas!</p>
-      </div>
-    </section>
+          <div class="recipe-details">
+            <div class="steps-area">
+              <p class="label-kecil">BAHAN:</p>
+              <ul id="hasil-bahan" class="daftar-bahan"></ul>
 
-    <footer class="kaki-nota">
-      <div class="garis-putus"></div>
-      <p>*** terima kasih sudah ngopi hemat ***</p>
-    </footer>
+              <p class="label-kecil mt-3">LANGKAH:</p>
+              <ol id="hasil-langkah" class="daftar-langkah"></ol>
+            </div>
+
+            <div class="tips-area">
+              <div id="hasil-tips-wrap" class="tips-box" hidden>
+                <strong>💡 Tips Barista</strong>
+                <p id="hasil-tips"></p>
+              </div>
+
+              <div id="hasil-referensi-wrap" class="referensi-box" hidden>
+                <strong>📊 RAG Dataset</strong>
+                <p id="hasil-referensi"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
 
   </div>
+
+  <!-- PANEL BAWAH: Riwayat -->
+  <section class="history-section">
+    <div class="riwayat-header">
+      <h3>Riwayat Eksperimen</h3>
+      <button id="btn-refresh" type="button" title="Muat ulang riwayat">↻ Refresh</button>
+    </div>
+    
+    <!-- Class history-grid dipakai di CSS agar bentuknya kotak-kotak -->
+    <div id="riwayat-list" class="history-grid">
+      <p class="riwayat-kosong">Belum ada eksperimen. Racik menu pertamamu di atas!</p>
+    </div>
+  </section>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

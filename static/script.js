@@ -1,6 +1,7 @@
 const el = (id) => document.getElementById(id);
 
 const bahanInput = el("bahan-input");
+const preferensiInput = el("preferensi-input"); // Tangkap elemen preferensi
 const btnRacik = el("btn-racik");
 const btnText = el("btn-text");
 const pesanError = el("pesan-error");
@@ -31,8 +32,18 @@ function formatWaktu(iso) {
 }
 
 function renderResep(resep) {
+  // Sembunyikan pesan pembuka jika ada
+  const welcomeState = el("welcome-state");
+  if (welcomeState) welcomeState.hidden = true;
+
   el("hasil-nama").textContent = resep.nama_menu;
   el("hasil-deskripsi").textContent = resep.deskripsi || "";
+
+  // Tampilkan hasil prediksi ANN di badge
+  const elKategori = el("hasil-kategori");
+  if (elKategori && resep.kategori_ann) {
+    elKategori.textContent = resep.kategori_ann;
+  }
 
   const ulBahan = el("hasil-bahan");
   ulBahan.innerHTML = "";
@@ -105,6 +116,9 @@ async function muatRiwayat() {
 
 async function racikMenu() {
   const bahan = bahanInput.value.trim();
+  // Ambil nilai dari kolom preferensi
+  const preferensi = preferensiInput ? preferensiInput.value.trim() : ""; 
+
   sembunyikanError();
 
   if (!bahan) {
@@ -119,7 +133,8 @@ async function racikMenu() {
     const res = await fetch("/api/racik", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bahan }),
+      // Masukkan preferensi ke dalam data JSON yang dikirim
+      body: JSON.stringify({ bahan: bahan, preferensi: preferensi }),
     });
 
     const data = await res.json();
@@ -140,9 +155,17 @@ async function racikMenu() {
 
 btnRacik.addEventListener("click", racikMenu);
 btnRefresh.addEventListener("click", muatRiwayat);
+
 bahanInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) racikMenu();
 });
+
+// Fitur tambahan: tekan Enter di kolom preferensi akan langsung meracik
+if (preferensiInput) {
+  preferensiInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") racikMenu(); 
+  });
+}
 
 // muat riwayat begitu halaman dibuka
 muatRiwayat();

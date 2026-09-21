@@ -1,283 +1,265 @@
-/* ------------------------------------------------------------------
-   Token desain — "AI Barista Anak Kos"
-   Konsep: nota / struk kasir minimarket, bukan kartu SaaS generik.
-   Warna:
-     --kertas   : #F3EEDF  (kertas struk/kraft)
-     --tinta    : #2A2118  (tinta hitam kecoklatan)
-     --kopi     : #5B3A29  (coklat kopi tua)
-     --sachet   : #DD6B20  (oranye kemasan sachet kopi/susu)
-     --hijau    : #4C6B3F  (hijau warung, aksen "hemat")
-     --garis    : #C9BFA6  (garis putus2 nota)
-   Font:
-     Display / heading -> "Space Grotesk" (tegas, agak playful, bukan default)
-     Body / label      -> "JetBrains Mono" (nuansa struk kasir dot-matrix)
-------------------------------------------------------------------- */
-
+/* Reset Dasar & Variabel Warna */
 :root {
-  --kertas: #f3eedf;
-  --kertas-gelap: #ece4cf;
-  --tinta: #2a2118;
-  --kopi: #5b3a29;
-  --sachet: #dd6b20;
-  --hijau: #4c6b3f;
-  --garis: #c9bfa6;
-  --merah-error: #b3401f;
-}
-
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: var(--kertas-gelap);
-  color: var(--tinta);
-  font-family: "JetBrains Mono", monospace;
-  -webkit-font-smoothing: antialiased;
+  --bg-dark: #121212;
+  --panel-bg: #1e1e1e;
+  --card-bg: #292929;
+  --text-main: #f0f0f0;
+  --text-muted: #a0a0a0;
+  --accent: #d97736;
+  --accent-hover: #b86027;
+  --border-color: #333;
 }
 
 body {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  padding: 40px 16px 80px;
-  background-image:
-    radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
-  background-size: 14px 14px;
-}
-
-.meja {
-  width: 100%;
-  max-width: 440px;
-  background: var(--kertas);
-  padding: 28px 24px 20px;
-  box-shadow: 0 18px 40px rgba(42, 33, 24, 0.18);
-  position: relative;
-}
-
-/* efek pinggiran nota bergerigi, atas & bawah */
-.meja::before,
-.meja::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 10px;
-  background:
-    linear-gradient(135deg, var(--kertas-gelap) 25%, transparent 25%) -6px 0,
-    linear-gradient(225deg, var(--kertas-gelap) 25%, transparent 25%) -6px 0;
-  background-size: 12px 12px;
-}
-.meja::before { top: -1px; }
-.meja::after { bottom: -1px; transform: scaleY(-1); }
-
-.garis-putus {
-  border-top: 2px dashed var(--garis);
-  margin: 18px 0;
-}
-
-/* ---------- Kop nota ---------- */
-.kop-nota {
-  text-align: center;
-}
-
-.kop-nota .logo {
-  width: 84px;
-  height: auto;
-  margin: 0 auto 10px;
-  display: block;
-}
-
-.nama-warung {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--kopi);
-  margin: 0 0 6px;
-}
-
-.kop-nota h1 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 30px;
-  line-height: 1.05;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Space Grotesk', sans-serif;
   margin: 0;
-  color: var(--tinta);
+  padding: 20px 40px;
+  line-height: 1.6;
 }
 
-.kop-nota .tagline {
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: var(--kopi);
+h1, h2, h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
-/* ---------- Form racik ---------- */
-.form-racik label {
+.label-kecil {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+/* --- LAYOUT UTAMA (GRID 2 KOLOM) --- */
+.main-container {
+  display: flex;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.left-panel, .right-panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 30px;
+}
+
+.left-panel {
+  flex: 0 0 35%; /* Lebar fix untuk form input */
+}
+
+.right-panel {
+  flex: 1; /* Sisa ruang untuk hasil */
+  min-height: 400px;
+}
+
+/* --- KIRI: Header & Form --- */
+.header h1 {
+  font-size: 2rem;
+  color: var(--accent);
+}
+.header h1 span {
+  font-size: 1.2rem;
+  color: var(--text-main);
   display: block;
-  font-size: 13px;
-  margin-bottom: 8px;
-  color: var(--kopi);
+}
+.tagline {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 30px;
 }
 
-.form-racik textarea {
+textarea {
   width: 100%;
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 15px;
+  border-radius: 8px;
   resize: vertical;
-  border: 2px solid var(--tinta);
-  background: #fffdf7;
-  padding: 12px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
-  color: var(--tinta);
+  margin-top: 8px;
+  box-sizing: border-box;
 }
 
-.form-racik textarea:focus {
-  outline: 3px solid var(--sachet);
-  outline-offset: 1px;
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
-#btn-racik {
-  margin-top: 14px;
+button#btn-racik {
   width: 100%;
-  padding: 14px;
-  background: var(--sachet);
-  color: #fffdf7;
+  background-color: var(--accent);
+  color: white;
   border: none;
-  font-family: "Space Grotesk", sans-serif;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1.1rem;
   font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.02em;
+  font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease;
+  margin-top: 15px;
+  transition: 0.2s;
 }
 
-#btn-racik:hover { background: #c65a15; }
-#btn-racik:active { transform: scale(0.98); }
-#btn-racik:disabled {
-  background: #b8a98f;
-  cursor: wait;
+button#btn-racik:hover {
+  background-color: var(--accent-hover);
 }
 
 .pesan-error {
+  color: #ff5252;
+  font-size: 0.85rem;
   margin-top: 10px;
-  font-size: 13px;
-  color: var(--merah-error);
 }
 
-/* ---------- Hasil resep ---------- */
-.label-kecil {
-  font-size: 11px;
-  color: var(--kopi);
-  margin: 0 0 8px;
+/* --- KANAN: Hasil Resep & ANN --- */
+.welcome-state {
+  text-align: center;
+  color: var(--text-muted);
+  margin-top: 100px;
 }
 
-.hasil-resep h2 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 22px;
-  margin: 0 0 8px;
-  color: var(--tinta);
+.ann-badge {
+  background-color: var(--card-bg);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ann-badge .value {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.recipe-card {
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  padding: 25px;
+  border-radius: 12px;
+}
+
+.recipe-card h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
 }
 
 .deskripsi {
-  font-size: 13.5px;
-  line-height: 1.6;
-  margin: 0 0 16px;
+  color: #ccc;
+  margin-bottom: 25px;
+}
+
+.recipe-details {
+  display: flex;
+  gap: 30px;
+}
+
+.steps-area {
+  flex: 1;
 }
 
 .daftar-bahan, .daftar-langkah {
-  margin: 0 0 16px;
+  margin: 0;
   padding-left: 20px;
-  font-size: 13.5px;
-  line-height: 1.7;
+  color: #ccc;
 }
 
-.daftar-bahan li::marker { color: var(--sachet); }
-.daftar-langkah li::marker { color: var(--hijau); font-weight: 700; }
-
-.tips-box {
-  border-left: 3px solid var(--hijau);
-  padding: 10px 12px;
-  background: rgba(76, 107, 63, 0.08);
-  font-size: 13px;
-  margin-bottom: 6px;
+.daftar-bahan li, .daftar-langkah li {
+  margin-bottom: 8px;
 }
 
-.referensi-box {
-  border-left: 3px solid var(--sachet);
-  padding: 10px 12px;
-  background: rgba(221, 107, 32, 0.08);
-  font-size: 12.5px;
-  margin-bottom: 6px;
-  font-style: italic;
+.mt-3 {
+  margin-top: 20px;
 }
 
-.footer-nota {
-  text-align: center;
-  font-size: 12px;
-  color: var(--kopi);
-  margin: 0;
+.tips-area {
+  flex: 0 0 250px;
 }
 
-/* ---------- Riwayat ---------- */
-.riwayat-kop {
+.tips-box, .referensi-box {
+  background-color: #3b2b20; /* Coklat gelap pudar */
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+.tips-box strong, .referensi-box strong {
+  color: var(--accent);
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* --- BAWAH: Riwayat Grid --- */
+.history-section {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  background-color: var(--panel-bg);
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.riwayat-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
 }
 
-.riwayat-kop h3 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 17px;
-  margin: 0 0 10px;
-}
-
-#btn-refresh {
-  background: none;
-  border: 2px solid var(--tinta);
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+button#btn-refresh {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 8px 15px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--tinta);
+}
+button#btn-refresh:hover {
+  background: #333;
+  color: white;
 }
 
-.riwayat-kosong {
-  font-size: 13px;
-  color: var(--kopi);
-  text-align: center;
-  padding: 12px 0;
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
 }
 
-.riwayat-item {
-  border: 2px dashed var(--garis);
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  background: #fffdf7;
+/* CSS ini membidik elemen div yang nanti di-generate oleh script.js kamu */
+.history-grid div, .history-item {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 15px;
+  border-radius: 8px;
 }
 
-.riwayat-item:hover { border-color: var(--sachet); }
-
-.riwayat-item .riwayat-nama {
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  margin: 0 0 4px;
+/* Responsif Mobile */
+@media (max-width: 850px) {
+  .main-container, .recipe-details {
+    flex-direction: column;
+  }
+  .left-panel {
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
 
-.riwayat-item .riwayat-meta {
-  font-size: 11.5px;
-  color: var(--kopi);
-  margin: 0;
+.logo {
+  max-width: 350px;
+  height: auto;
+  display: block;
+  margin: -30px 0 -80px -110px; 
 }
 
-.kaki-nota {
-  text-align: center;
-}
-.kaki-nota p {
-  font-size: 12px;
-  color: var(--kopi);
-  margin: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+.header h1 {
+  margin-top: 0; 
+  padding-top: 0;
 }

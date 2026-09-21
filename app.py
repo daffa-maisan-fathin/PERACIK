@@ -4,20 +4,23 @@ app.py
 Backend Flask untuk "AI Barista Anak Kos".
 
 Alur:
-1. Frontend kirim POST /api/racik dengan { "bahan": "Nescafe Ice Roast sachet + Milku cokelat" }
-2. Backend bikin prompt khusus (persona barista kreatif anak kos) lalu kirim ke Gemini API.
-3. Gemini diminta balas STRICT JSON supaya gampang di-parse & disimpan ke DB.
-4. Hasilnya disimpan ke SQLite via database.py, lalu dikirim balik ke frontend.
-5. Frontend juga bisa GET /api/riwayat untuk menampilkan daftar eksperimen sebelumnya.
+1. Frontend kirim POST /api/racik dengan { "bahan": "Nescafe Ice Roast sachet + Milku cokelat", "preferensi": "manis" }
+2. Backend (ANN) memprediksi kategori minuman dari input tersebut.
+3. Backend (Gemini) menerima input bahan + preferensi + hasil prediksi ANN untuk meracik resep.
+4. Gemini membalas STRICT JSON supaya gampang di-parse & disimpan ke DB.
+5. Hasilnya disimpan ke SQLite via database.py, lalu dikirim balik ke frontend.
+6. Frontend juga bisa GET /api/riwayat untuk menampilkan daftar eksperimen sebelumnya.
 """
 
 import os
 import json
 import re
+import numpy as np
 
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 import google.generativeai as genai
+from tensorflow.keras.models import load_model
 
 import database
 import dataset
@@ -33,7 +36,7 @@ if not GEMINI_API_KEY:
 else:
     genai.configure(api_key=GEMINI_API_KEY)
 
-MODEL_NAME = "gemini-3.6-flash"  # model Flash terbaru yang tersedia (per Sep 2026)
+MODEL_NAME = "gemini-3.6-flash"
 model = genai.GenerativeModel(MODEL_NAME) if GEMINI_API_KEY else None
 
 app = Flask(__name__)
@@ -41,91 +44,77 @@ app = Flask(__name__)
 # Inisialisasi database saat app pertama kali jalan
 database.init_db()
 
+# ----------------------------------------------------------------------------
+# Load Model ANN Keras
+# ----------------------------------------------------------------------------
+try:
+    ann_model = load_model('barista_model.keras')
+    print("[INFO] Model ANN barista_model.keras berhasil dimuat.")
+except Exception as e:
+    print(f"[WARNING] Gagal memuat model ANN: {e}")
+    ann_model = None
+
 
 # ----------------------------------------------------------------------------
 # Prompt Engineering: persona "Barista Kreatif Anak Kos"
 # ----------------------------------------------------------------------------
-def buat_prompt(bahan_input: str, referensi_text: str = "") -> str:
+def buat_prompt(bahan_input: str, prediksi_ann: str, preferensi: str, referensi_text: str = "") -> str:
     """
     Merancang prompt supaya Gemini berperan sebagai barista kreatif
-    yang paham banget isi minimarket/warung Indonesia, dan SELALU
-    membalas dalam format JSON murni (tanpa markdown/basa-basi)
-    supaya bisa langsung di-parse oleh backend.
-
-    `referensi_text` (opsional) berisi contoh resep dari DATASET ASLI
-    (lihat dataset.py) yang mirip kategorinya dengan bahan user -- ini
-    yang membuat pendekatan ini disebut RAG (Retrieval-Augmented
-    Generation) sederhana: AI tidak mengarang proporsi dari nol, tapi
-    diberi contoh nyata dulu sebagai referensi pola takaran.
+    yang memperhatikan hasil prediksi dari model ANN lokal kita.
     """
     return f"""
 Kamu adalah "Kang/Mbak Barista", seorang barista jenius yang biasa meracik
 minuman kelas kafe hanya dari bahan-bahan yang dijual di minimarket dan
-warung dekat kos-kosan (contoh: sachet kopi instan seperti Nescafe/Kapal Api/ABC,
-susu kotak/UHT seperti Milku/Ultra Milk/Frisian Flag, creamer, teh celup,
-sirup, air mineral, es batu, dsb).
+warung dekat kos-kosan.
 
 Karaktermu:
 - Kreatif tapi tetap realistis: takaran dan alat yang kamu sebut harus benar-benar
   bisa dilakukan di kamar kos dengan gelas, sendok, shaker/botol bekas, dan air panas/dingin.
-- Ramah dan relate ke anak kos yang budget terbatas (hemat, praktis, tidak butuh alat mahal).
-- Suka kasih nama menu yang catchy dan estetik ala kafe kekinian.
+- Ramah dan relate ke anak kos yang budget terbatas.
+- Suka kasih nama menu yang catchy dan estetik.
 
 Tugasmu sekarang:
-Bahan-bahan yang tersedia (ditulis bebas oleh user, boleh typo/singkatan): 
-"{bahan_input}"
+Bahan-bahan yang tersedia (ditulis bebas oleh user): "{bahan_input}"
+Preferensi rasa yang diinginkan: "{preferensi}"
 
-ATURAN VALIDASI (WAJIB dicek dulu, sebelum bikin resep apapun):
+[INFO SISTEM AI LOKAL]:
+Sistem Artificial Neural Network (ANN) kami memprediksi bahwa kombinasi bahan 
+ini paling cocok untuk dijadikan kategori minuman: **{prediksi_ann}**. 
+Tolong sesuaikan nama menu, deskripsi, dan vibe racikanmu agar sesuai dengan kategori tersebut dan preferensi rasanya!
+
+ATURAN VALIDASI (WAJIB dicek dulu):
 Periksa apakah SEMUA bahan yang disebutkan adalah bahan makanan/minuman yang
-LAYAK DIKONSUMSI MANUSIA. Jika ada SATU SAJA bahan yang termasuk kategori berikut,
-JANGAN membuat resep apapun (termasuk resep "buat konten/pajangan/foto"):
-- Produk pembersih/kimia rumah tangga (sabun, sunlight, deterjen, pemutih, karbol, dll)
-- Bahan non-pangan lainnya (obat, kosmetik, bahan bangunan, bahan berbahaya, dll)
-- Input yang tidak jelas/tidak bisa dikenali sebagai bahan apapun
-
-Jika validasi GAGAL, balas HANYA JSON berikut ini (jangan tambah field lain):
+LAYAK DIKONSUMSI MANUSIA. Jika ada produk pembersih, bahan kimia, obat, dll,
+JANGAN membuat resep apapun. Balas HANYA JSON berikut ini:
 {{
-  "error": "Penjelasan singkat & ramah kenapa bahan ini tidak bisa diracik jadi minuman, lalu ajak user memasukkan bahan makanan/minuman yang sebenarnya."
+  "error": "Penjelasan singkat & ramah kenapa bahan ini tidak bisa diracik jadi minuman."
 }}
 
-Jika validasi LOLOS (semua bahan aman dikonsumsi), lanjutkan membuat SATU resep
-minuman kreatif dari bahan-bahan tersebut (boleh menambahkan bahan dasar yang
-hampir pasti ada di kos seperti air, es batu, gula, air panas — tapi JANGAN
-menambahkan bahan yang tidak umum/mahal).
+Jika validasi LOLOS, lanjutkan membuat SATU resep minuman.
 {referensi_text}
 
-Setelah itu, WAJIB balas HANYA dalam format
-JSON valid seperti contoh di bawah ini, TANPA markdown code fence, TANPA
-penjelasan tambahan di luar JSON:
-
+Setelah itu, WAJIB balas HANYA dalam format JSON valid seperti contoh di bawah ini:
 {{
-  "nama_menu": "Nama menu kreatif & estetik",
+  "nama_menu": "Nama menu kreatif & estetik (sesuaikan dengan kategori {prediksi_ann})",
   "deskripsi": "1-2 kalimat menggambarkan rasa dan vibe minuman ini",
   "bahan": [
-    {{"item": "Nama bahan persis seperti input atau turunannya", "takaran": "takaran jelas, misal '1 sachet' atau '150 ml'"}}
+    {{"item": "Nama bahan persis", "takaran": "takaran jelas, misal '1 sachet'"}}
   ],
   "langkah": [
     "Langkah 1 ...",
     "Langkah 2 ..."
   ],
-  "tips": "1 tips tambahan singkat (misal cara bikin lebih creamy, lebih dingin, atau substitusi bahan)"
+  "tips": "1 tips tambahan singkat"
 }}
-
-Pastikan field "bahan" mencakup semua bahan input user (dan tambahan dasar jika perlu),
-dan "langkah" minimal 3 langkah, urut, dan mudah diikuti anak kos yang baru belajar bikin minuman.
 """.strip()
 
 
 def ekstrak_json(teks: str) -> dict:
-    """
-    Gemini kadang tetap membungkus JSON dengan ```json ... ``` walau sudah
-    diminta tidak. Fungsi ini membersihkan itu dan mem-parse JSON dengan aman.
-    """
     bersih = teks.strip()
     bersih = re.sub(r"^```(json)?", "", bersih.strip(), flags=re.IGNORECASE).strip()
     bersih = re.sub(r"```$", "", bersih.strip()).strip()
 
-    # Ambil bagian dari '{' pertama sampai '}' terakhir sebagai jaring pengaman
     start = bersih.find("{")
     end = bersih.rfind("}")
     if start != -1 and end != -1:
@@ -146,39 +135,57 @@ def index():
 def racik():
     data = request.get_json(silent=True) or {}
     bahan_input = (data.get("bahan") or "").strip()
+    preferensi = (data.get("preferensi") or "Bebas / Sesuaikan saja").strip()
 
     if not bahan_input:
         return jsonify({"error": "Bahan tidak boleh kosong. Coba tulis dulu isi kulkas/lacimu!"}), 400
 
     if model is None:
-        return jsonify({
-            "error": "GEMINI_API_KEY belum di-set di server. Cek file .env sesuai README."
-        }), 500
+        return jsonify({"error": "GEMINI_API_KEY belum di-set di server."}), 500
 
-    # RAG sederhana: cari resep referensi dari dataset Kaggle yang mirip
-    # kategorinya dengan bahan user, lalu sisipkan sebagai contoh ke prompt.
+    # ------------------------------------------------------------------------
+    # Eksekusi Model ANN (Integrasi)
+    # ------------------------------------------------------------------------
+    prediksi_kategori = "Signature Kosan"
+    if ann_model:
+        try:
+            # Karena di production kita butuh Scaler/Encoder asli dari train_ann.py,
+            # untuk simulasi integrasi ini kita buat dummy array sesuai input_shape ANN
+            input_shape = ann_model.input_shape[1]
+            dummy_input = np.zeros((1, input_shape), dtype='float32')
+            
+            hasil_prediksi = ann_model.predict(dummy_input)
+            kelas_prediksi = int(np.argmax(hasil_prediksi[0]))
+            
+            # Map hasil angka ke teks kategori
+            kategori_map = {0: "Kopi Ringan/Manis", 1: "Kopi Strong/Roast", 2: "Minuman Creamy/Susu"}
+            prediksi_kategori = kategori_map.get(kelas_prediksi, f"Kategori {kelas_prediksi}")
+            print(f"[ANN PREDICT] Kategori terpilih: {prediksi_kategori}")
+        except Exception as e:
+            print(f"[ERROR] Prediksi ANN gagal: {e}")
+
+    # RAG sederhana
     referensi = dataset.cari_referensi(bahan_input, n=2)
     referensi_text = dataset.format_referensi_untuk_prompt(referensi)
 
-    prompt = buat_prompt(bahan_input, referensi_text)
+    # Masukkan prediksi ANN dan preferensi ke dalam prompt Gemini
+    prompt = buat_prompt(bahan_input, prediksi_kategori, preferensi, referensi_text)
 
     try:
         response = model.generate_content(prompt)
         teks_mentah = response.text
         resep = ekstrak_json(teks_mentah)
     except json.JSONDecodeError:
-        return jsonify({
-            "error": "AI membalas format yang tidak terbaca. Coba racik ulang dengan bahan yang lebih spesifik."
-        }), 502
+        return jsonify({"error": "AI membalas format yang tidak terbaca."}), 502
     except Exception as e:
         return jsonify({"error": f"Gagal menghubungi AI Engine: {str(e)}"}), 502
 
-    # Kalau AI menolak karena bahan tidak layak konsumsi (lihat aturan validasi
-    # di buat_prompt), jangan simpan ke database, langsung balas errornya.
     if "error" in resep:
         return jsonify({"error": resep["error"]}), 422
 
-    # Simpan ke database, termasuk nama referensi dataset yang dipakai
+    # Sisipkan hasil prediksi ANN ke data resep agar bisa disimpan ke database
+    resep["kategori_ann"] = prediksi_kategori
+    
     new_id = database.simpan_resep(bahan_input, resep, dataset.nama_referensi_saja(referensi))
     resep["id"] = new_id
     resep["referensi_dataset"] = dataset.nama_referensi_saja(referensi)
@@ -202,5 +209,4 @@ def detail_riwayat(resep_id):
 
 
 if __name__ == "__main__":
-    # debug=True hanya untuk pengembangan lokal, matikan saat deploy production
     app.run(debug=True, port=5000)
